@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/CURRENCY MODULE/CURRENCY MODULE.iml" filepath="$PROJECT_DIR$/CURRENCY MODULE/CURRENCY MODULE.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/JAVA-MODULES-CURRENCY-CONVERSION.iml" filepath="$PROJECT_DIR$/.idea/JAVA-MODULES-CURRENCY-CONVERSION.iml" />
     </modules>
   </component>
 </project>
