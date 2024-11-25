@@ -8,11 +8,11 @@ import org.junit.jupiter.api.Test;//Allows marking methods as unit tests using t
 import org.mockito.Mock;//Marks a variable as a mock object (a simulated external dependency).
 import org.mockito.MockitoAnnotations;//Initializes mock objects
 import java.time.LocalDateTime;//Enables working with timestamps for audit logs.
-public class CurrencyClass { //Declares the test class for CurrencyConversionModule. It contains all the unit tests.
-     CurrencyConversion conversionModule; //test module
+public class CurrencyClass { //Declares the main test class for CurrencyConversionModule. It contains all the unit tests.
+    protected CurrencyConversion conversionModule; //test module
     @Mock
     private ExternalServiceRate mockExternalServiceRate; //Declares a mock object of ExternalRateService to simulate fetching exchange rates.
-    static final double CurrentExchangeRate = 1.0;
+    static final double CurrentExchangeRate = 1.1;
     //Specifies a fallback exchange rate used when the external service is unavailable.
     @BeforeEach //Ensures this method runs before every test to set up required objects.
     void setUp() {
