@@ -1,62 +1,123 @@
+package com.currencypackage;
 
-package com.currencypackage; //package declaration
-////necessary JUnit and Mockito packages to ensure unit testing and mocking dependencies respectively.
-import static org.junit.jupiter.api.Assertions.*; // imports static assertions from JUnit5
-import static org.mockito.Mockito.*;//imports Mockito methods like when and verify for mocking behavior in unit tests.
-import org.junit.jupiter.api.BeforeEach;//Provides the @BeforeEach annotation to set up test-specific configurations before each test.
-import org.junit.jupiter.api.Test;//Allows marking methods as unit tests using the @Test annotation.
-import org.mockito.Mock;//Marks a variable as a mock object (a simulated external dependency).
-import org.mockito.MockitoAnnotations;//Initializes mock objects
-import java.time.LocalDateTime;//Enables working with timestamps for audit logs.
-public class CurrencyClass { //Declares the test class for CurrencyConversionModule. It contains all the unit tests.
-     CurrencyConversion conversionModule; //test module
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.time.LocalDateTime; // Provides the LocalDateTime class for timestamps
+
+
+public class CurrencyClass {
+    private CurrencyConversion conversionModule;
+
     @Mock
-    private ExternalServiceRate mockExternalServiceRate; //Declares a mock object of ExternalRateService to simulate fetching exchange rates.
+    private ExternalServiceRate mockExternalServiceRate;
+
     static final double CurrentExchangeRate = 1.0;
-    //Specifies a fallback exchange rate used when the external service is unavailable.
 
-   //Unauthorized access test class
-   @Test
-   void testUnauthorizedAccessToLogsThrowsException() {
-       Exception exception = assertThrows(SecurityException.class, () -> {
-           conversionModule.accessAuditLogsFromUnauthorizedModule();
-       });
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        conversionModule = new CurrencyConversion(mockExternalServiceRate);
+    }
 
-       // Verify exception message
-       assertEquals("Unauthorized access to audit logs", exception.getMessage());
-       //Ensures only authorized modules can access logs by verifying an exception is thrown for unauthorized access.
-   }
-
-  //Verifies the accuracy of audit log entries for a valid transaction.
     @Test
-   void testAuditLogging() {
-       when(mockExternalRateService.getExchangeRate("USD", "EUR")).thenReturn(0.85);
+    void testUnauthorizedAccessToLogsThrowsException() {
+        Exception exception = assertThrows(SecurityException.class, () -> {
+            conversionModule.accessAuditLogsFromUnauthorizedModule();
+        });
 
-       // Perform a valid conversion
-       conversionModule.convertCurrency("USD", "EUR", 100);
+        assertEquals("Unauthorized access to audit logs", exception.getMessage());
+    }
 
-       // Retrieve the audit logs
-       var logs = conversionModule.getAuditLogs();
+    @Test
+    void testAuditLogging() {
+        when(mockExternalServiceRate.getExchangeRate("USD", "EUR")).thenReturn(0.5);
 
-       // Verify audit log details
-       assertFalse(logs.isEmpty());
-       Transaction log = logs.get(0);
+        // Perform a valid conversion
+        conversionModule.convertCurrency("USD", "EUR", 50);
 
-       assertEquals("USD", log.getOriginalCurrency());
-       assertEquals("EUR", log.getTargetCurrency());
-       assertEquals(100, log.getOriginalAmount());
-       assertEquals(0.85, log.getExchangeRate());
-       assertNotNull(log.getTimestamp());
-   }
+        // Retrieve the audit logs
+        List<Transaction> logs = conversionModule.getAuditLogs();
 
+        assertFalse(logs.isEmpty());
+        Transaction log = logs.get(0);
 
+        assertEquals("USD", log.getOriginalCurrency());
+        assertEquals("EUR", log.getTargetCurrency());
+        assertEquals(50, log.getOriginalAmount());
+        assertEquals(0.5, log.getExchangeRate());
+        assertNotNull(log.getTimestamp());
+    }
+}
 
+// Mock dependencies and classes for demonstration
+class ExternalServiceRate {
+    public double getExchangeRate(String fromCurrency, String toCurrency) {
+        return 0.0; // Mock implementation
+    }
+}
 
+class CurrencyConversion {
+    private final ExternalServiceRate externalServiceRate;
+    private final List<Transaction> auditLogs = new ArrayList<>();
 
+    public CurrencyConversion(ExternalServiceRate externalServiceRate) {
+        this.externalServiceRate = externalServiceRate;
+    }
 
+    public void accessAuditLogsFromUnauthorizedModule() {
+        throw new SecurityException("Unauthorized access to audit logs");
+    }
 
+    public void convertCurrency(String fromCurrency, String toCurrency, double amount) {
+        double rate = externalServiceRate.getExchangeRate(fromCurrency, toCurrency);
+        auditLogs.add(new Transaction(fromCurrency, toCurrency, amount, rate));
+    }
 
+    public List<Transaction> getAuditLogs() {
+        return auditLogs;
+    }
+}
 
+class Transaction {
+    private final String originalCurrency;
+    private final String targetCurrency;
+    private final double originalAmount;
+    private final double exchangeRate;
+    private final String timestamp;
 
+    public Transaction(String originalCurrency, String targetCurrency, double originalAmount, double exchangeRate) {
+        this.originalCurrency = originalCurrency;
+        this.targetCurrency = targetCurrency;
+        this.originalAmount = originalAmount;
+        this.exchangeRate = exchangeRate;
+        this.timestamp = LocalDateTime.now().toString();
+    }
 
+    public String getOriginalCurrency() {
+        return originalCurrency;
+    }
+
+    public String getTargetCurrency() {
+        return targetCurrency;
+    }
+
+    public double getOriginalAmount() {
+        return originalAmount;
+    }
+
+    public double getExchangeRate() {
+        return exchangeRate;
+    }
+
+    public String getTimestamp() {
+        return timestamp;
+    }
 }
