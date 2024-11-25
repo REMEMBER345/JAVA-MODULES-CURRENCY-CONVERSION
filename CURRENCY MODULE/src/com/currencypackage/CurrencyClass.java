@@ -1,101 +1,166 @@
+package com.currencypackage;
 
-package com.currencypackage; //package declaration
-////necessary JUnit and Mockito packages to ensure unit testing and mocking dependencies respectively.
-import static org.junit.jupiter.api.Assertions.*; // imports static assertions from JUnit5
-import static org.mockito.Mockito.*;//imports Mockito methods like when and verify for mocking behavior in unit tests.
-import org.junit.jupiter.api.BeforeEach;//Provides the @BeforeEach annotation to set up test-specific configurations before each test.
-import org.junit.jupiter.api.Test;//Allows marking methods as unit tests using the @Test annotation.
-import org.mockito.Mock;//Marks a variable as a mock object (a simulated external dependency).
-import org.mockito.MockitoAnnotations;//Initializes mock objects
-import java.time.LocalDateTime;//Enables working with timestamps for audit logs.
-public class CurrencyClass { //Declares the main test class for CurrencyConversionModule. It contains all the unit tests.
-    protected CurrencyConversion conversionModule; //test module
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.time.LocalDateTime; // Provides the LocalDateTime class for timestamps
+
+
+// Main Test Class
+public class CurrencyClass {
+    private CurrencyConversion conversionModule;
+
     @Mock
-    private ExternalServiceRate mockExternalServiceRate; //Declares a mock object of ExternalRateService to simulate fetching exchange rates.
+    private ExternalServiceRate mockExternalServiceRate;
+
     static final double DEFAULT_EXCHANGE_RATE = 1.1;
-    //Specifies a fallback exchange rate used when the external service is unavailable.
-    @BeforeEach //Ensures this method runs before every test to set up required objects.
+
+    @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this); //Initializes all mock objects annotated with @Mock.
-        conversionModule = new CurrencyConversion(mockExternalRateService, CurrentExchangeRate);
-        //Instantiates the CurrencyConversion, injecting the mock external service and the current exchange rate.
+        MockitoAnnotations.openMocks(this);
+        conversionModule = new CurrencyConversion(mockExternalServiceRate, DEFAULT_EXCHANGE_RATE);
     }
-//Valid Transaction test
-@Test //Marks this as a unit test.
-void testValidTransaction() {
-    // Mocking external service response
-    when(mockExternalRateService.getExchangeRate("USD", "EUR")).thenReturn(0.5);
-// Simulates the external service returning an exchange rate of 0.5 for converting USD to EUR.
 
-    // Performing conversion
-    Transaction transaction = conversionModule.convertCurrency("USD", "EUR", 50);
-//Calls the method under test, converting 50 USD to EUR.
+    @Test
+    void testValidTransaction() {
+        when(mockExternalServiceRate.getExchangeRate("USD", "EUR")).thenReturn(0.5);
 
-    // Assertions for conversion result
-    assertNotNull(transaction);//Ensures the transaction object is created.
-    assertEquals(85.0, transaction.getConvertedAmount(), 0.002);
-    //Verifies the converted amount is correct, allowing for a small precision difference (0.002).
-//Asserts all transaction details are accurate: original currency, target currency, amount, and exchange rate.
-    assertEquals("USD", transaction.getOriginalCurrency());
-    assertEquals("EUR", transaction.getTargetCurrency());
-    assertEquals(50, transaction.getOriginalAmount());
-    assertEquals(0.5, transaction.getExchangeRate());
+        Transaction transaction = conversionModule.convertCurrency("USD", "EUR", 50);
 
-    // Verify audit logging
-    assertTrue(conversionModule.getAuditLogs().contains(transaction));
-    //Ensures the transaction is logged successfully.
-}
-//Invalid amount testing
+        assertNotNull(transaction);
+        assertEquals(25.0, transaction.getConvertedAmount(), 0.002); // Corrected expected amount
+        assertEquals("USD", transaction.getOriginalCurrency());
+        assertEquals("EUR", transaction.getTargetCurrency());
+        assertEquals(50, transaction.getOriginalAmount());
+        assertEquals(0.5, transaction.getExchangeRate());
+
+        assertTrue(conversionModule.getAuditLogs().contains(transaction));
+    }
+
     @Test
     void testInvalidAmountThrowsException() {
-        //assertThrows: Verifies that an exception is thrown for a negative amount.
-        //IllegalArgumentException: Expected exception type.
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             conversionModule.convertCurrency("USD", "EUR", -100);
         });
-       //Verifies the exception message and ensures no transaction is logged.
-        // Verify exception message
-        assertEquals("Amount must be positive", exception.getMessage());
 
-        // Verify no audit logging
+        assertEquals("Amount must be positive", exception.getMessage());
         assertTrue(conversionModule.getAuditLogs().isEmpty());
     }
-    //invalid currency code
+
     @Test
     void testInvalidCurrencyCodeThrowsException() {
-        //thenThrow: Simulates the external service throwing an exception for an unsupported currency code.
-        when(mockExternalRateService.getExchangeRate("INVALID", "EUR"))
+        when(mockExternalServiceRate.getExchangeRate("INVALID", "EUR"))
                 .thenThrow(new IllegalArgumentException("Unsupported currency code"));
-//Confirms the exception message and checks no transaction is logged.
+
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             conversionModule.convertCurrency("INVALID", "EUR", 100);
         });
 
-        // Verify exception message
         assertEquals("Unsupported currency code", exception.getMessage());
-
-        // Verify no audit logging
         assertTrue(conversionModule.getAuditLogs().isEmpty());
     }
-    //test for unavailable service scenario
+
     @Test
     void testUnavailableExternalServiceUsesDefaultRate() {
-        //RuntimeException: Simulates the external service being unavailable.
-        when(mockExternalRateService.getExchangeRate("USD", "EUR"))
+        when(mockExternalServiceRate.getExchangeRate("USD", "EUR"))
                 .thenThrow(new RuntimeException("Service unavailable"));
 
-        // Performing conversion with default rate
-        //Verifies the conversion succeeds using the default rate.
         Transaction transaction = conversionModule.convertCurrency("USD", "EUR", 100);
 
-        // Assertions for conversion with default rate
-        //Confirms the default exchange rate is used and the converted amount is correct.
         assertNotNull(transaction);
         assertEquals(110.0, transaction.getConvertedAmount(), 0.01);
         assertEquals(DEFAULT_EXCHANGE_RATE, transaction.getExchangeRate());
 
-        // Verify audit logging
         assertTrue(conversionModule.getAuditLogs().contains(transaction));
     }
+}
 
+// Mock Dependencies and Classes
+class ExternalServiceRate {
+    public double getExchangeRate(String fromCurrency, String toCurrency) {
+        return 0.0; // Mock implementation
+    }
+}
+
+class CurrencyConversion {
+    private final ExternalServiceRate externalServiceRate;
+    private final double defaultExchangeRate;
+    private final List<Transaction> auditLogs = new ArrayList<>();
+
+    public CurrencyConversion(ExternalServiceRate externalServiceRate, double defaultExchangeRate) {
+        this.externalServiceRate = externalServiceRate;
+        this.defaultExchangeRate = defaultExchangeRate;
+    }
+
+    public Transaction convertCurrency(String fromCurrency, String toCurrency, double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+
+        double rate;
+        try {
+            rate = externalServiceRate.getExchangeRate(fromCurrency, toCurrency);
+        } catch (RuntimeException e) {
+            rate = defaultExchangeRate;
+        }
+
+        double convertedAmount = amount * rate;
+        Transaction transaction = new Transaction(fromCurrency, toCurrency, amount, rate, convertedAmount);
+        auditLogs.add(transaction);
+        return transaction;
+    }
+
+    public List<Transaction> getAuditLogs() {
+        return auditLogs;
+    }
+}
+
+class Transaction {
+    private final String originalCurrency;
+    private final String targetCurrency;
+    private final double originalAmount;
+    private final double exchangeRate;
+    private final double convertedAmount;
+    private final String timestamp;
+
+    public Transaction(String originalCurrency, String targetCurrency, double originalAmount,
+                       double exchangeRate, double convertedAmount) {
+        this.originalCurrency = originalCurrency;
+        this.targetCurrency = targetCurrency;
+        this.originalAmount = originalAmount;
+        this.exchangeRate = exchangeRate;
+        this.convertedAmount = convertedAmount;
+        this.timestamp = LocalDateTime.now().toString();
+    }
+
+    public String getOriginalCurrency() {
+        return originalCurrency;
+    }
+
+    public String getTargetCurrency() {
+        return targetCurrency;
+    }
+
+    public double getOriginalAmount() {
+        return originalAmount;
+    }
+
+    public double getExchangeRate() {
+        return exchangeRate;
+    }
+
+    public double getConvertedAmount() {
+        return convertedAmount;
+    }
+
+    public String getTimestamp() {
+        return timestamp;
+    }
 }
