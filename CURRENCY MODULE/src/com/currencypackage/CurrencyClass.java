@@ -20,5 +20,29 @@ public class CurrencyClass { //Declares the test class for CurrencyConversionMod
         conversionModule = new CurrencyConversion(mockExternalRateService, CurrentExchangeRate);
         //Instantiates the CurrencyConversion, injecting the mock external service and the current exchange rate.
     }
+//Valid Transaction test
+@Test //Marks this as a unit test.
+void testValidTransaction() {
+    // Mocking external service response
+    when(mockExternalRateService.getExchangeRate("USD", "EUR")).thenReturn(0.5);
+// Simulates the external service returning an exchange rate of 0.5 for converting USD to EUR.
 
+    // Performing conversion
+    Transaction transaction = conversionModule.convertCurrency("USD", "EUR", 50);
+//Calls the method under test, converting 50 USD to EUR.
+
+    // Assertions for conversion result
+    assertNotNull(transaction);//Ensures the transaction object is created.
+    assertEquals(85.0, transaction.getConvertedAmount(), 0.002);
+    //Verifies the converted amount is correct, allowing for a small precision difference (0.002).
+//Asserts all transaction details are accurate: original currency, target currency, amount, and exchange rate.
+    assertEquals("USD", transaction.getOriginalCurrency());
+    assertEquals("EUR", transaction.getTargetCurrency());
+    assertEquals(50, transaction.getOriginalAmount());
+    assertEquals(0.5, transaction.getExchangeRate());
+
+    // Verify audit logging
+    assertTrue(conversionModule.getAuditLogs().contains(transaction));
+    //Ensures the transaction is logged successfully.
+}
 }
