@@ -60,5 +60,21 @@ void testValidTransaction() {
         // Verify no audit logging
         assertTrue(conversionModule.getAuditLogs().isEmpty());
     }
+    //invalid currency code
+    @Test
+    void testInvalidCurrencyCodeThrowsException() {
+        //thenThrow: Simulates the external service throwing an exception for an unsupported currency code.
+        when(mockExternalRateService.getExchangeRate("INVALID", "EUR"))
+                .thenThrow(new IllegalArgumentException("Unsupported currency code"));
+//Confirms the exception message and checks no transaction is logged.
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            conversionModule.convertCurrency("INVALID", "EUR", 100);
+        });
 
+        // Verify exception message
+        assertEquals("Unsupported currency code", exception.getMessage());
+
+        // Verify no audit logging
+        assertTrue(conversionModule.getAuditLogs().isEmpty());
+    }
 }
