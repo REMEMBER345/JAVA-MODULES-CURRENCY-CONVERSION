@@ -24,9 +24,30 @@ public class CurrencyClass { //Declares the test class for CurrencyConversionMod
 
        // Verify exception message
        assertEquals("Unauthorized access to audit logs", exception.getMessage());
+       //Ensures only authorized modules can access logs by verifying an exception is thrown for unauthorized access.
    }
-   //Ensures only authorized modules can access logs by verifying an exception is thrown for unauthorized access.
 
+  //Verifies the accuracy of audit log entries for a valid transaction.
+    @Test
+   void testAuditLogging() {
+       when(mockExternalRateService.getExchangeRate("USD", "EUR")).thenReturn(0.85);
+
+       // Perform a valid conversion
+       conversionModule.convertCurrency("USD", "EUR", 100);
+
+       // Retrieve the audit logs
+       var logs = conversionModule.getAuditLogs();
+
+       // Verify audit log details
+       assertFalse(logs.isEmpty());
+       Transaction log = logs.get(0);
+
+       assertEquals("USD", log.getOriginalCurrency());
+       assertEquals("EUR", log.getTargetCurrency());
+       assertEquals(100, log.getOriginalAmount());
+       assertEquals(0.85, log.getExchangeRate());
+       assertNotNull(log.getTimestamp());
+   }
 
 
 
