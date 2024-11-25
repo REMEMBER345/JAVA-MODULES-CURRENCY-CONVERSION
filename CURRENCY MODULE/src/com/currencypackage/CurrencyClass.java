@@ -12,7 +12,7 @@ public class CurrencyClass { //Declares the main test class for CurrencyConversi
     protected CurrencyConversion conversionModule; //test module
     @Mock
     private ExternalServiceRate mockExternalServiceRate; //Declares a mock object of ExternalRateService to simulate fetching exchange rates.
-    static final double CurrentExchangeRate = 1.1;
+    static final double DEFAULT_EXCHANGE_RATE = 1.1;
     //Specifies a fallback exchange rate used when the external service is unavailable.
     @BeforeEach //Ensures this method runs before every test to set up required objects.
     void setUp() {
