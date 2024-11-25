@@ -14,5 +14,28 @@ public class CurrencyClass { //Declares the test class for CurrencyConversionMod
     private ExternalServiceRate mockExternalServiceRate; //Declares a mock object of ExternalRateService to simulate fetching exchange rates.
     static final double CurrentExchangeRate = 1.0;
     //Specifies a fallback exchange rate used when the external service is unavailable.
-    
+
+   //Unauthorized access test class
+   @Test
+   void testUnauthorizedAccessToLogsThrowsException() {
+       Exception exception = assertThrows(SecurityException.class, () -> {
+           conversionModule.accessAuditLogsFromUnauthorizedModule();
+       });
+
+       // Verify exception message
+       assertEquals("Unauthorized access to audit logs", exception.getMessage());
+   }
+   //Ensures only authorized modules can access logs by verifying an exception is thrown for unauthorized access.
+
+
+
+
+
+
+
+
+
+
+
+
 }
