@@ -14,5 +14,11 @@ public class CurrencyClass { //Declares the test class for CurrencyConversionMod
     private ExternalServiceRate mockExternalServiceRate; //Declares a mock object of ExternalRateService to simulate fetching exchange rates.
     static final double CurrentExchangeRate = 1.0;
     //Specifies a fallback exchange rate used when the external service is unavailable.
-    
+    @BeforeEach //Ensures this method runs before every test to set up required objects.
+    void setUp() {
+        MockitoAnnotations.openMocks(this); //Initializes all mock objects annotated with @Mock.
+        conversionModule = new CurrencyConversion(mockExternalRateService, CurrentExchangeRate);
+        //Instantiates the CurrencyConversion, injecting the mock external service and the current exchange rate.
+    }
+
 }
