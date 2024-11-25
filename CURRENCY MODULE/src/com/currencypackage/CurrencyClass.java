@@ -77,4 +77,25 @@ void testValidTransaction() {
         // Verify no audit logging
         assertTrue(conversionModule.getAuditLogs().isEmpty());
     }
+    //test for unavailable service scenario
+    @Test
+    void testUnavailableExternalServiceUsesDefaultRate() {
+        //RuntimeException: Simulates the external service being unavailable.
+        when(mockExternalRateService.getExchangeRate("USD", "EUR"))
+                .thenThrow(new RuntimeException("Service unavailable"));
+
+        // Performing conversion with default rate
+        //Verifies the conversion succeeds using the default rate.
+        Transaction transaction = conversionModule.convertCurrency("USD", "EUR", 100);
+
+        // Assertions for conversion with default rate
+        //Confirms the default exchange rate is used and the converted amount is correct.
+        assertNotNull(transaction);
+        assertEquals(110.0, transaction.getConvertedAmount(), 0.01);
+        assertEquals(DEFAULT_EXCHANGE_RATE, transaction.getExchangeRate());
+
+        // Verify audit logging
+        assertTrue(conversionModule.getAuditLogs().contains(transaction));
+    }
+
 }
