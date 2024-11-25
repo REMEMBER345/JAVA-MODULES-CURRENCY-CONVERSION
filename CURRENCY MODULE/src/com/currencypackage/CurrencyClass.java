@@ -45,4 +45,20 @@ void testValidTransaction() {
     assertTrue(conversionModule.getAuditLogs().contains(transaction));
     //Ensures the transaction is logged successfully.
 }
+//Invalid amount testing
+    @Test
+    void testInvalidAmountThrowsException() {
+        //assertThrows: Verifies that an exception is thrown for a negative amount.
+        //IllegalArgumentException: Expected exception type.
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            conversionModule.convertCurrency("USD", "EUR", -100);
+        });
+       //Verifies the exception message and ensures no transaction is logged.
+        // Verify exception message
+        assertEquals("Amount must be positive", exception.getMessage());
+
+        // Verify no audit logging
+        assertTrue(conversionModule.getAuditLogs().isEmpty());
+    }
+
 }
